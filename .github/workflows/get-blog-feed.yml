@@ -13,8 +13,9 @@ jobs:
         id: get-github-blog-rss
         uses: ./
         with:
-          token: ${{ secrets.MY_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           dry-run: false
           labels: |
             'actions'
             'copilot'
+          days: 7
