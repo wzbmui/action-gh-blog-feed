@@ -24,5 +24,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Babel
+        run: npm install --save-dev @babel/core @babel/preset-env
+
+      - name: Configure Jest to use Babel
+        run: echo '{ "presets": ["@babel/preset-env"] }' > babel.config.json
+
       - name: Run tests
         run: npm test
