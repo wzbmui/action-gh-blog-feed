@@ -7,6 +7,7 @@ async function run() {
     const token = core.getInput('token');
     const dryRun = core.getBooleanInput('dry-run');
     const labels = core.getMultilineInput('labels');
+    const days = core.getInput('days');
 
     const baseUrl = 'https://github.blog/feed/?s=';
     const octokit = github.getOctokit(token);
@@ -23,9 +24,15 @@ async function run() {
       await _formatAndPrintLogOutput(feed);
     }
 
+    // Filter feeds by date
+    const filteredFeeds = _filterFeedsByDate(allFeeds, days);
+
+    // Sort feeds by date in descending order
+    filteredFeeds.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
     // TODO: Create an issue in the workflow repo listing all rss feed items with their hyperlink, publication date, and title. Label the issue as "news-update".
     if (!dryRun) {
-      const issueBody = allFeeds.map(item => `- [${item.title}](${item.link})`).join('\n');
+      const issueBody = filteredFeeds.map(item => `- [${item.title}](${item.link}) - ${item.pubDate}`).join('\n');
       const issue = await octokit.rest.issues.create({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
@@ -35,7 +42,7 @@ async function run() {
       });
     }
 
-    core.setOutput('feeds', JSON.stringify(allFeeds));
+    core.setOutput('feeds', JSON.stringify(filteredFeeds));
 
   } catch (error) {
     core.setFailed(error.message);
@@ -65,9 +72,26 @@ async function _formatAndPrintLogOutput(feed) {
   });
 }
 
+/**
+ * Filters the feeds by the given number of days.
+ * @param {Array} feeds - The array of feed items.
+ * @param {number} days - The number of days to filter by.
+ * @returns {Array} - The filtered array of feed items.
+ */
+function _filterFeedsByDate(feeds, days) {
+  const now = new Date();
+  return feeds.filter(item => {
+    const pubDate = new Date(item.pubDate);
+    const diffTime = Math.abs(now - pubDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= days;
+  });
+}
+
 module.exports = {
   _getRssFeed,
-  _formatAndPrintLogOutput
+  _formatAndPrintLogOutput,
+  _filterFeedsByDate
 };
 
 run();
