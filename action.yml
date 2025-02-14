@@ -11,6 +11,10 @@ inputs:
   labels:
     description: Multi-line list of labels to filter on
     required: true
+  days:
+    description: Number of days worth of posts to include
+    required: false
+    default: 7
 runs:
   using: 'node16'
   main: 'dist/index.js'
